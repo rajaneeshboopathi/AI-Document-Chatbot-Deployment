@@ -2,7 +2,7 @@ let currentChatId = null;
 let chatInitialized = false;
 let currentDocumentName = null;
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://ai-document-chatbot-deployment.onrender.com";
 
 // ============================================
 // DOM ELEMENTS
