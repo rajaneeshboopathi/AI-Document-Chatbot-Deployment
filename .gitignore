@@ -1,0 +1,64 @@
+# =========================
+# Python virtual environment
+# =========================
+venv/
+.venv/
+
+# =========================
+# Python cache
+# =========================
+__pycache__/
+*.py[cod]
+
+# =========================
+# Environment variables / secrets
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Local application data
+# =========================
+data/uploads/*
+data/chroma/*
+data/chat_history.db
+data/processed_files.json
+
+# =========================
+# Logs
+# =========================
+logs/
+*.log
+
+# =========================
+# IDE files
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Temporary files
+# =========================
+*.tmp
+.tmp_*
+
+# =========================
+# Testing / coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Local development test scripts
+# =========================
+test_*.py
+cleanup_database.py
+reset_database.py
