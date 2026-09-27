@@ -1,12 +1,33 @@
-from sentence_transformers import CrossEncoder
+import os
 
 
-model = CrossEncoder(
-    "cross-encoder/ms-marco-MiniLM-L-6-v2"
-)
+USE_RERANKER = os.getenv("USE_RERANKER", "true").lower() == "true"
+
+model = None
+
+if USE_RERANKER:
+    from sentence_transformers import CrossEncoder
+
+    model = CrossEncoder(
+        "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    )
 
 
 def rerank_documents(question, documents, metadatas, top_k=3):
+
+    # If reranking is disabled, keep the original
+    # vector-search order.
+    if not USE_RERANKER:
+        ranked_results = []
+
+        for i, document in enumerate(documents):
+            ranked_results.append({
+                "document": document,
+                "metadata": metadatas[i],
+                "score": 0.0
+            })
+
+        return ranked_results[:top_k]
 
     pairs = []
 
