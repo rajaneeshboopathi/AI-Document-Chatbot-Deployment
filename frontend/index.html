@@ -4,7 +4,10 @@
 <head>
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>AI Document Assistant</title>
 
@@ -15,16 +18,55 @@
 
     <div class="app">
 
-        <!-- Sidebar -->
+        <!-- =========================================
+             MOBILE MENU BUTTON
+             ========================================= -->
+
+        <button
+            id="mobile-menu-btn"
+            class="mobile-menu-btn"
+            aria-label="Open chat history"
+        >
+            ☰
+        </button>
+
+
+        <!-- =========================================
+             MOBILE SIDEBAR OVERLAY
+             ========================================= -->
+
+        <div
+            id="sidebar-overlay"
+            class="sidebar-overlay"
+        ></div>
+
+
+        <!-- =========================================
+             SIDEBAR
+             ========================================= -->
+
         <aside class="sidebar">
+
+            <!-- Mobile close button -->
+
+            <button
+                id="mobile-close-btn"
+                class="mobile-close-btn"
+                aria-label="Close chat history"
+            >
+                ×
+            </button>
+
 
             <div class="logo">
                 🤖 AI Document Assistant
             </div>
 
+
             <button class="new-chat-btn">
                 + New Chat
             </button>
+
 
             <div class="history">
 
@@ -39,29 +81,44 @@
         </aside>
 
 
-        <!-- Main Chat Area -->
+        <!-- =========================================
+             MAIN CHAT AREA
+             ========================================= -->
+
         <main class="main">
 
             <!-- Header -->
+
             <header class="header">
 
                 <div>
-                    <h1>AI Document Assistant</h1>
+
+                    <h1>
+                        AI Document Assistant
+                    </h1>
 
                     <p>
                         Ask questions about your uploaded documents
                     </p>
+
                 </div>
 
             </header>
 
 
-            <!-- Upload Area -->
+            <!-- =====================================
+                 UPLOAD AREA
+                 ===================================== -->
+
             <section class="upload-section">
 
-                <label for="file-input" class="upload-btn">
+                <label
+                    for="file-input"
+                    class="upload-btn"
+                >
                     📄 Upload Document
                 </label>
+
 
                 <input
                     type="file"
@@ -70,6 +127,7 @@
                     hidden
                 >
 
+
                 <span id="upload-status">
                     Supported: PDF, TXT, DOCX
                 </span>
@@ -77,7 +135,10 @@
             </section>
 
 
-            <!-- Chat Messages -->
+            <!-- =====================================
+                 CHAT MESSAGES
+                 ===================================== -->
+
             <section
                 class="chat-container"
                 id="chat-container"
@@ -98,7 +159,10 @@
             </section>
 
 
-            <!-- Input Area -->
+            <!-- =====================================
+                 INPUT AREA
+                 ===================================== -->
+
             <section class="input-section">
 
                 <textarea
@@ -106,6 +170,7 @@
                     placeholder="Ask something about your document..."
                     rows="1"
                 ></textarea>
+
 
                 <button
                     id="send-btn"

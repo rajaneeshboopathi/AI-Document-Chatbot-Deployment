@@ -2,7 +2,10 @@ let currentChatId = null;
 let chatInitialized = false;
 let currentDocumentName = null;
 
-const API_URL = "https://ai-document-chatbot-deployment.onrender.com";
+
+const API_URL =
+    "https://ai-document-chatbot-deployment.onrender.com";
+
 
 // ============================================
 // DOM ELEMENTS
@@ -11,23 +14,95 @@ const API_URL = "https://ai-document-chatbot-deployment.onrender.com";
 const fileInput =
     document.getElementById("file-input");
 
+
 const uploadStatus =
     document.getElementById("upload-status");
+
 
 const questionInput =
     document.getElementById("question-input");
 
+
 const sendButton =
     document.getElementById("send-btn");
+
 
 const chatContainer =
     document.getElementById("chat-container");
 
+
 const newChatButton =
     document.querySelector(".new-chat-btn");
 
+
 const historyList =
     document.getElementById("history-list");
+
+
+// ============================================
+// MOBILE SIDEBAR ELEMENTS
+// ============================================
+
+const mobileMenuButton =
+    document.getElementById("mobile-menu-btn");
+
+
+const mobileCloseButton =
+    document.getElementById("mobile-close-btn");
+
+
+const sidebar =
+    document.querySelector(".sidebar");
+
+
+const sidebarOverlay =
+    document.getElementById("sidebar-overlay");
+
+
+// ============================================
+// MOBILE SIDEBAR FUNCTIONS
+// ============================================
+
+function openMobileSidebar() {
+
+    sidebar.classList.add("open");
+
+    sidebarOverlay.classList.add("open");
+
+}
+
+
+function closeMobileSidebar() {
+
+    sidebar.classList.remove("open");
+
+    sidebarOverlay.classList.remove("open");
+
+}
+
+
+// Open sidebar
+
+mobileMenuButton.addEventListener(
+    "click",
+    openMobileSidebar
+);
+
+
+// Close sidebar using X
+
+mobileCloseButton.addEventListener(
+    "click",
+    closeMobileSidebar
+);
+
+
+// Close sidebar by clicking outside
+
+sidebarOverlay.addEventListener(
+    "click",
+    closeMobileSidebar
+);
 
 
 // ============================================
@@ -40,6 +115,7 @@ function saveSession() {
         "currentChatId",
         currentChatId || ""
     );
+
 }
 
 
@@ -48,6 +124,7 @@ function getSavedChatId() {
     return sessionStorage.getItem(
         "currentChatId"
     );
+
 }
 
 
@@ -58,13 +135,19 @@ function getChatSessions() {
             "chatSessions"
         );
 
+
     if (!sessions) {
+
         return [];
+
     }
+
 
     try {
 
-        return JSON.parse(sessions);
+        return JSON.parse(
+            sessions
+        );
 
     } catch (error) {
 
@@ -74,7 +157,9 @@ function getChatSessions() {
         );
 
         return [];
+
     }
+
 }
 
 
@@ -84,6 +169,7 @@ function saveChatSessions(sessions) {
         "chatSessions",
         JSON.stringify(sessions)
     );
+
 }
 
 
@@ -103,8 +189,10 @@ async function createNewChat() {
                 }
             );
 
+
         const result =
             await response.json();
+
 
         if (!response.ok) {
 
@@ -112,22 +200,29 @@ async function createNewChat() {
                 result.detail ||
                 "Failed to create chat"
             );
+
         }
+
 
         currentChatId =
             result.chat_id;
 
+
         currentDocumentName =
             null;
 
+
         saveSession();
+
 
         console.log(
             "New chat created:",
             currentChatId
         );
 
+
         return currentChatId;
+
 
     } catch (error) {
 
@@ -136,12 +231,16 @@ async function createNewChat() {
             error
         );
 
+
         alert(
             "Could not create a new chat."
         );
 
+
         return null;
+
     }
+
 }
 
 
@@ -153,10 +252,12 @@ function getCurrentMessages() {
 
     const messages = [];
 
+
     const messageElements =
         chatContainer.querySelectorAll(
             ".user-message, .ai-message"
         );
+
 
     messageElements.forEach(
         element => {
@@ -173,6 +274,7 @@ function getCurrentMessages() {
 
                     message:
                         element.textContent
+
                 });
 
             } else {
@@ -182,12 +284,15 @@ function getCurrentMessages() {
                         ".ai-answer"
                     );
 
+
                 const answer =
                     answerElement
                         ? answerElement.textContent
                         : element.textContent;
 
+
                 let sources = [];
+
 
                 try {
 
@@ -200,7 +305,9 @@ function getCurrentMessages() {
                 } catch (error) {
 
                     sources = [];
+
                 }
+
 
                 messages.push({
 
@@ -209,12 +316,17 @@ function getCurrentMessages() {
                     message: answer,
 
                     sources: sources
+
                 });
+
             }
+
         }
     );
 
+
     return messages;
+
 }
 
 
@@ -225,18 +337,26 @@ function getCurrentMessages() {
 function saveCurrentChat() {
 
     if (!currentChatId) {
+
         return;
+
     }
+
 
     const messages =
         getCurrentMessages();
 
+
     if (messages.length === 0) {
+
         return;
+
     }
+
 
     const sessions =
         getChatSessions();
+
 
     const existingIndex =
         sessions.findIndex(
@@ -245,23 +365,28 @@ function saveCurrentChat() {
                 currentChatId
         );
 
+
     const firstUserMessage =
         messages.find(
             message =>
                 message.type === "user"
         );
 
+
     let title =
         firstUserMessage
             ? firstUserMessage.message
             : "New Chat";
+
 
     if (title.length > 35) {
 
         title =
             title.substring(0, 35) +
             "...";
+
     }
+
 
     const chatData = {
 
@@ -276,7 +401,9 @@ function saveCurrentChat() {
 
         messages:
             messages
+
     };
+
 
     if (existingIndex !== -1) {
 
@@ -288,13 +415,17 @@ function saveCurrentChat() {
         sessions.unshift(
             chatData
         );
+
     }
+
 
     saveChatSessions(
         sessions
     );
 
+
     renderHistory();
+
 }
 
 
@@ -307,6 +438,7 @@ function restoreChat(chatId) {
     const sessions =
         getChatSessions();
 
+
     const chat =
         sessions.find(
             item =>
@@ -314,20 +446,28 @@ function restoreChat(chatId) {
                 chatId
         );
 
+
     if (!chat) {
+
         return;
+
     }
+
 
     currentChatId =
         chat.chat_id;
 
+
     currentDocumentName =
         chat.document || null;
 
+
     saveSession();
+
 
     chatContainer.innerHTML =
         "";
+
 
     chat.messages.forEach(
         message => {
@@ -337,15 +477,19 @@ function restoreChat(chatId) {
                 message.message,
                 message.sources || []
             );
+
         }
     );
+
 
     if (
         chat.messages.length === 0
     ) {
 
         showWelcomeMessage();
+
     }
+
 
     if (currentDocumentName) {
 
@@ -356,14 +500,18 @@ function restoreChat(chatId) {
 
         uploadStatus.textContent =
             "Supported: PDF, TXT, DOCX";
+
     }
 
+
     renderHistory();
+
 
     console.log(
         "Restored chat:",
         currentChatId
     );
+
 }
 
 
@@ -376,8 +524,10 @@ function renderHistory() {
     historyList.innerHTML =
         "";
 
+
     const sessions =
         getChatSessions();
+
 
     sessions.forEach(
         chat => {
@@ -387,8 +537,10 @@ function renderHistory() {
                     "div"
                 );
 
+
             historyItem.className =
                 "history-item";
+
 
             if (
                 chat.chat_id ===
@@ -398,7 +550,9 @@ function renderHistory() {
                 historyItem.classList.add(
                     "active"
                 );
+
             }
+
 
             // Chat title
 
@@ -407,11 +561,14 @@ function renderHistory() {
                     "div"
                 );
 
+
             title.className =
                 "history-title";
 
+
             title.textContent =
                 chat.title;
+
 
             historyItem.appendChild(
                 title
@@ -427,17 +584,23 @@ function renderHistory() {
                         "div"
                     );
 
+
                 documentName.className =
                     "history-document";
+
 
                 documentName.textContent =
                     `📄 ${chat.document}`;
 
+
                 historyItem.appendChild(
                     documentName
                 );
+
             }
 
+
+            // Restore chat
 
             historyItem.addEventListener(
                 "click",
@@ -445,17 +608,26 @@ function renderHistory() {
 
                     saveCurrentChat();
 
+
                     restoreChat(
                         chat.chat_id
                     );
+
+
+                    // Close mobile sidebar
+                    closeMobileSidebar();
+
                 }
             );
+
 
             historyList.appendChild(
                 historyItem
             );
+
         }
     );
+
 }
 
 
@@ -467,13 +639,19 @@ function showWelcomeMessage() {
 
     chatContainer.innerHTML = `
         <div class="welcome-message">
-            <h2>👋 Welcome!</h2>
+
+            <h2>
+                👋 Welcome!
+            </h2>
+
             <p>
                 Upload a document and ask me
                 anything about it.
             </p>
+
         </div>
     `;
+
 }
 
 
@@ -504,8 +682,10 @@ function addMessage(
         messageDiv.className =
             "user-message";
 
+
         messageDiv.textContent =
             message;
+
     }
 
 
@@ -517,6 +697,7 @@ function addMessage(
 
         messageDiv.className =
             "ai-message";
+
 
         // Store sources inside DOM
 
@@ -531,11 +712,14 @@ function addMessage(
                 "div"
             );
 
+
         answerDiv.className =
             "ai-answer";
 
+
         answerDiv.textContent =
             message;
+
 
         messageDiv.appendChild(
             answerDiv
@@ -555,6 +739,7 @@ function addMessage(
                     "div"
                 );
 
+
             sourceDiv.className =
                 "source";
 
@@ -564,8 +749,10 @@ function addMessage(
                     "strong"
                 );
 
+
             sourceTitle.textContent =
                 "Sources";
+
 
             sourceDiv.appendChild(
                 sourceTitle
@@ -580,16 +767,20 @@ function addMessage(
                             "div"
                         );
 
+
                     sourceItem.className =
                         "source-item";
+
 
                     sourceItem.textContent =
                         `${source.document} — ` +
                         `Page ${source.page}`;
 
+
                     sourceDiv.appendChild(
                         sourceItem
                     );
+
                 }
             );
 
@@ -597,7 +788,9 @@ function addMessage(
             messageDiv.appendChild(
                 sourceDiv
             );
+
         }
+
     }
 
 
@@ -608,6 +801,7 @@ function addMessage(
 
     chatContainer.scrollTop =
         chatContainer.scrollHeight;
+
 }
 
 
@@ -622,35 +816,48 @@ fileInput.addEventListener(
         const file =
             fileInput.files[0];
 
+
         if (!file) {
+
             return;
+
         }
+
 
         if (!currentChatId) {
 
             currentChatId =
                 await createNewChat();
 
+
             if (!currentChatId) {
+
                 return;
+
             }
+
         }
+
 
         uploadStatus.textContent =
             `Uploading ${file.name}...`;
 
+
         const formData =
             new FormData();
+
 
         formData.append(
             "chat_id",
             currentChatId
         );
 
+
         formData.append(
             "file",
             file
         );
+
 
         try {
 
@@ -663,8 +870,10 @@ fileInput.addEventListener(
                     }
                 );
 
+
             const result =
                 await response.json();
+
 
             if (!response.ok) {
 
@@ -672,8 +881,11 @@ fileInput.addEventListener(
                     result.detail ||
                     "Upload failed.";
 
+
                 return;
+
             }
+
 
             if (
                 result.duplicate
@@ -683,26 +895,33 @@ fileInput.addEventListener(
                     `${file.name} already exists ` +
                     `in this chat.`;
 
+
                 return;
+
             }
+
 
             // Remember document
 
             currentDocumentName =
                 file.name;
 
+
             uploadStatus.textContent =
                 `${file.name} uploaded successfully. ` +
                 `${result.chunks_created} chunks created.`;
+
 
             console.log(
                 "Document uploaded for chat:",
                 currentChatId
             );
 
+
             // Update sidebar
 
             saveCurrentChat();
+
 
         } catch (error) {
 
@@ -711,9 +930,12 @@ fileInput.addEventListener(
                 error
             );
 
+
             uploadStatus.textContent =
                 "Could not connect to the server.";
+
         }
+
     }
 );
 
@@ -727,9 +949,13 @@ async function sendQuestion() {
     const question =
         questionInput.value.trim();
 
+
     if (!question) {
+
         return;
+
     }
+
 
     if (!currentChatId) {
 
@@ -738,31 +964,42 @@ async function sendQuestion() {
             "Please click New Chat."
         );
 
+
         return;
+
     }
+
 
     const welcomeMessage =
         document.querySelector(
             ".welcome-message"
         );
 
+
     if (welcomeMessage) {
+
         welcomeMessage.remove();
+
     }
+
 
     addMessage(
         "user",
         question
     );
 
+
     questionInput.value =
         "";
+
 
     sendButton.disabled =
         true;
 
+
     sendButton.textContent =
         "⏳";
+
 
     try {
 
@@ -784,23 +1021,30 @@ async function sendQuestion() {
 
                         chat_id:
                             currentChatId
+
                     })
                 }
             );
 
+
         const result =
             await response.json();
+
 
         if (!response.ok) {
 
             addMessage(
                 "ai",
+
                 result.detail ||
                 "Something went wrong."
             );
 
+
             return;
+
         }
+
 
         addMessage(
             "ai",
@@ -808,9 +1052,11 @@ async function sendQuestion() {
             result.sources || []
         );
 
+
         // Save messages + sources
 
         saveCurrentChat();
+
 
     } catch (error) {
 
@@ -818,6 +1064,7 @@ async function sendQuestion() {
             "Chat error:",
             error
         );
+
 
         addMessage(
             "ai",
@@ -829,9 +1076,12 @@ async function sendQuestion() {
         sendButton.disabled =
             false;
 
+
         sendButton.textContent =
             "➤";
+
     }
+
 }
 
 
@@ -847,32 +1097,48 @@ newChatButton.addEventListener(
 
         saveCurrentChat();
 
+
         // Create new chat
 
         const newChatId =
             await createNewChat();
 
+
         if (!newChatId) {
+
             return;
+
         }
 
+
         showWelcomeMessage();
+
 
         questionInput.value =
             "";
 
+
         fileInput.value =
             "";
+
 
         uploadStatus.textContent =
             "Supported: PDF, TXT, DOCX";
 
+
         renderHistory();
+
+
+        // Close mobile sidebar
+
+        closeMobileSidebar();
+
 
         console.log(
             "Active chat changed:",
             currentChatId
         );
+
     }
 );
 
@@ -902,8 +1168,11 @@ questionInput.addEventListener(
 
             event.preventDefault();
 
+
             sendQuestion();
+
         }
+
     }
 );
 
@@ -917,14 +1186,19 @@ window.addEventListener(
     async function () {
 
         if (chatInitialized) {
+
             return;
+
         }
+
 
         chatInitialized =
             true;
 
+
         const savedChatId =
             getSavedChatId();
+
 
         if (savedChatId) {
 
@@ -933,12 +1207,15 @@ window.addEventListener(
                 savedChatId
             );
 
+
             currentChatId =
                 savedChatId;
+
 
             restoreChat(
                 savedChatId
             );
+
 
         } else {
 
@@ -947,15 +1224,21 @@ window.addEventListener(
                 "Creating new chat."
             );
 
+
             currentChatId =
                 await createNewChat();
+
 
             if (currentChatId) {
 
                 showWelcomeMessage();
 
+
                 renderHistory();
+
             }
+
         }
+
     }
 );
