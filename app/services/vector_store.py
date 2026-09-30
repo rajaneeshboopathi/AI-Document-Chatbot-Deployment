@@ -12,6 +12,7 @@ from qdrant_client.models import (
     Filter,
     FieldCondition,
     MatchValue,
+    Range,
 )
 
 
@@ -41,14 +42,12 @@ VECTOR_SIZE = 768
 # ============================================================
 
 if not QDRANT_URL:
-
     raise ValueError(
         "QDRANT_URL is missing from .env"
     )
 
 
 if not QDRANT_API_KEY:
-
     raise ValueError(
         "QDRANT_API_KEY is missing from .env"
     )
@@ -59,9 +58,7 @@ if not QDRANT_API_KEY:
 # ============================================================
 
 client = QdrantClient(
-
     url=QDRANT_URL,
-
     api_key=QDRANT_API_KEY,
 )
 
@@ -78,11 +75,8 @@ def make_qdrant_id(chunk_id):
     """
 
     return str(
-
         uuid.uuid5(
-
             uuid.NAMESPACE_URL,
-
             chunk_id
         )
     )
@@ -97,22 +91,16 @@ def ensure_collection():
     collections = client.get_collections()
 
     existing_names = [
-
         collection.name
-
         for collection in collections.collections
     ]
 
     if COLLECTION_NAME not in existing_names:
 
         client.create_collection(
-
             collection_name=COLLECTION_NAME,
-
             vectors_config=VectorParams(
-
                 size=VECTOR_SIZE,
-
                 distance=Distance.COSINE,
             ),
         )
@@ -137,23 +125,34 @@ def ensure_collection():
 def ensure_payload_indexes():
 
     """
-    Creates the chat_id payload index.
+    Creates payload indexes used for filtering.
 
-    chat_id is an exact identifier, so it is
-    stored as a keyword field.
+    chat_id:
+        Exact identifier for the current chat.
+
+    page:
+        Integer page number used for page-specific
+        and page-range retrieval.
     """
 
     client.create_payload_index(
-
         collection_name=COLLECTION_NAME,
-
         field_name="chat_id",
-
         field_schema="keyword",
     )
 
     print(
         "Qdrant payload index ready: chat_id"
+    )
+
+    client.create_payload_index(
+        collection_name=COLLECTION_NAME,
+        field_name="page",
+        field_schema="integer",
+    )
+
+    print(
+        "Qdrant payload index ready: page"
     )
 
 
@@ -184,7 +183,6 @@ def add_chunk(
     qdrant_id = make_qdrant_id(chunk_id)
 
     point = PointStruct(
-
         id=qdrant_id,
 
         # Gemini already returns a Python list.
@@ -198,9 +196,7 @@ def add_chunk(
     )
 
     client.upsert(
-
         collection_name=COLLECTION_NAME,
-
         points=[point],
     )
 
@@ -213,31 +209,71 @@ def search_chunks(
     query_embedding,
     chat_id,
     top_k=10,
+    page_start=None,
+    page_end=None,
 ):
 
     """
-    Searches for the most semantically similar
-    chunks belonging to the current chat.
+    Searches for semantically similar chunks
+    belonging to the current chat.
+
+    Optional page filtering:
+
+        page_start=2
+        page_end=2
+
+    retrieves only Page 2.
+
+        page_start=2
+        page_end=3
+
+    retrieves Pages 2 through 3.
+
+    If page_start/page_end are not supplied,
+    the existing chat-wide semantic search is used.
     """
 
-    query_filter = Filter(
+    # --------------------------------------------------------
+    # Base filter: current chat only
+    # --------------------------------------------------------
 
-        must=[
+    filter_conditions = [
+        FieldCondition(
+            key="chat_id",
+            match=MatchValue(
+                value=chat_id
+            ),
+        )
+    ]
 
+    # --------------------------------------------------------
+    # Optional page filtering
+    # --------------------------------------------------------
+
+    if page_start is not None:
+
+        # Single page
+        if page_end is None:
+            page_end = page_start
+
+        filter_conditions.append(
             FieldCondition(
-
-                key="chat_id",
-
-                match=MatchValue(
-
-                    value=chat_id
+                key="page",
+                range=Range(
+                    gte=page_start,
+                    lte=page_end,
                 ),
             )
-        ]
+        )
+
+    query_filter = Filter(
+        must=filter_conditions
     )
 
-    # Gemini returns a Python list,
-    # so .tolist() is not required.
+    # --------------------------------------------------------
+    # Qdrant vector search
+    # --------------------------------------------------------
+
     results = client.query_points(
 
         collection_name=COLLECTION_NAME,
@@ -261,7 +297,6 @@ def search_chunks(
 
         # Get chunk text
         documents.append(
-
             payload.get(
                 "text",
                 ""
@@ -270,28 +305,19 @@ def search_chunks(
 
         # Remove text from metadata
         metadata = {
-
             key: value
-
             for key, value in payload.items()
-
             if key != "text"
         }
 
         metadatas.append(metadata)
 
     return {
-
         "documents": [
-
             documents
-
         ],
-
         "metadatas": [
-
             metadatas
-
         ],
     }
 
@@ -308,15 +334,10 @@ def delete_chat_documents(chat_id):
     """
 
     query_filter = Filter(
-
         must=[
-
             FieldCondition(
-
                 key="chat_id",
-
                 match=MatchValue(
-
                     value=chat_id
                 ),
             )
@@ -324,9 +345,7 @@ def delete_chat_documents(chat_id):
     )
 
     client.delete(
-
         collection_name=COLLECTION_NAME,
-
         points_selector=query_filter,
     )
 
@@ -346,15 +365,10 @@ def delete_chat_documents_except(
     """
 
     query_filter = Filter(
-
         must=[
-
             FieldCondition(
-
                 key="chat_id",
-
                 match=MatchValue(
-
                     value=chat_id
                 ),
             )
@@ -362,13 +376,9 @@ def delete_chat_documents_except(
     )
 
     records, _ = client.scroll(
-
         collection_name=COLLECTION_NAME,
-
         scroll_filter=query_filter,
-
         with_payload=True,
-
         limit=10000,
     )
 
@@ -391,9 +401,7 @@ def delete_chat_documents_except(
     if ids_to_delete:
 
         client.delete(
-
             collection_name=COLLECTION_NAME,
-
             points_selector=ids_to_delete,
         )
 
@@ -413,15 +421,10 @@ def delete_document_by_file_hash(
     """
 
     query_filter = Filter(
-
         must=[
-
             FieldCondition(
-
                 key="chat_id",
-
                 match=MatchValue(
-
                     value=chat_id
                 ),
             )
@@ -429,13 +432,9 @@ def delete_document_by_file_hash(
     )
 
     records, _ = client.scroll(
-
         collection_name=COLLECTION_NAME,
-
         scroll_filter=query_filter,
-
         with_payload=True,
-
         limit=10000,
     )
 
@@ -456,9 +455,7 @@ def delete_document_by_file_hash(
     if ids_to_delete:
 
         client.delete(
-
             collection_name=COLLECTION_NAME,
-
             points_selector=ids_to_delete,
         )
 
@@ -485,12 +482,10 @@ def reset_collection():
     try:
 
         client.delete_collection(
-
             collection_name=COLLECTION_NAME
         )
 
         print(
-
             f"Deleted Qdrant collection: "
             f"{COLLECTION_NAME}"
         )
@@ -500,22 +495,17 @@ def reset_collection():
         pass
 
     client.create_collection(
-
         collection_name=COLLECTION_NAME,
-
         vectors_config=VectorParams(
-
             size=VECTOR_SIZE,
-
             distance=Distance.COSINE,
         ),
     )
 
-    # Recreate payload index
+    # Recreate payload indexes
     ensure_payload_indexes()
 
     print(
-
         f"Recreated Qdrant collection: "
         f"{COLLECTION_NAME}"
     )
