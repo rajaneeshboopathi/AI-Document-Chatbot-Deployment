@@ -21,6 +21,10 @@ from app.services.intent_classifier import (
     get_casual_response
 )
 
+from app.services.bot_identity import (
+    get_identity_response
+)
+
 from app.utils.logger import logger
 
 
@@ -127,8 +131,25 @@ def chat(
             "sources": []
         }
 
+
     # ====================================
-    # 5. Document question → RAG
+    # 5. Identity question
+    # ====================================
+
+    elif intent == "identity":
+
+        answer = get_identity_response(
+            request.question
+        )
+
+        result = {
+            "answer": answer,
+            "sources": []
+        }
+
+
+    # ====================================
+    # 6. Document question → RAG
     # ====================================
 
     else:
@@ -156,7 +177,7 @@ def chat(
 
 
     # ====================================
-    # 6. Save chat history
+    # 7. Save chat history
     # ====================================
 
     try:
@@ -185,7 +206,7 @@ def chat(
 
 
     # ====================================
-    # 7. Return response
+    # 8. Return response
     # ====================================
 
     return result
