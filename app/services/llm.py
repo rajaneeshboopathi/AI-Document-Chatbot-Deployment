@@ -34,10 +34,14 @@ client = genai.Client(
 
 
 # ============================================================
-# MODEL
+# MODEL FALLBACK CHAIN
 # ============================================================
 
-MODEL_NAME = "gemini-3.8-flash"
+MODEL_FALLBACK_CHAIN = [
+    "gemini-3.8-flash",       # Primary
+    "gemini-3.7-flash",       # Fallback 1
+    "gemini-3.5-flash-lite",  # Fallback 2
+]
 
 
 # ============================================================
@@ -83,33 +87,69 @@ User question:
 Answer:
 """
 
-    try:
+    # ========================================================
+    # TRY MODELS IN FALLBACK ORDER
+    # ========================================================
 
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=prompt
-        )
+    for model_name in MODEL_FALLBACK_CHAIN:
 
-        answer = response.text
+        try:
 
-        if not answer:
-
-            return (
-                "The AI model did not return an answer. "
-                "Please try again."
+            print(
+                f"Trying Gemini model: {model_name}"
             )
 
-        return answer.strip()
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt
+            )
+
+            answer = response.text
+
+            # -----------------------------------------------
+            # CHECK FOR EMPTY RESPONSE
+            # -----------------------------------------------
+
+            if answer and answer.strip():
+
+                print(
+                    f"Gemini model succeeded: {model_name}"
+                )
+
+                return answer.strip()
+
+            # -----------------------------------------------
+            # MODEL RESPONDED BUT RETURNED NOTHING
+            # -----------------------------------------------
+
+            print(
+                f"Gemini model returned an empty response: "
+                f"{model_name}"
+            )
+
+        except Exception as e:
+
+            # -----------------------------------------------
+            # MODEL FAILED
+            # -----------------------------------------------
+
+            print(
+                f"Gemini model failed: {model_name}"
+            )
+
+            print(
+                f"Error: {str(e)}"
+            )
+
+            # Continue to the next fallback model
+            continue
 
 
-    except Exception as e:
+    # ========================================================
+    # ALL MODELS FAILED
+    # ========================================================
 
-        print(
-            "Gemini API error:",
-            str(e)
-        )
-
-        return (
-            "There was a problem communicating with "
-            "the AI model. Please try again."
-        )
+    return (
+        "I'm having trouble connecting to the AI service "
+        "right now. Please try again in a moment."
+    )
