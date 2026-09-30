@@ -52,13 +52,17 @@ def classify_intent(question):
         question
     )
 
-    # Exact greetings
+    # ====================================
+    # 1. Exact greetings
+    # ====================================
 
     if normalized_question in GREETING_WORDS:
         return "casual"
 
 
-    # Casual conversation
+    # ====================================
+    # 2. Casual conversation
+    # ====================================
 
     casual_phrases = [
         "how are you",
@@ -82,9 +86,46 @@ def classify_intent(question):
     for phrase in casual_phrases:
 
         if normalized_question == phrase:
-
             return "casual"
 
+
+    # ====================================
+    # 3. Identity questions
+    # ====================================
+
+    identity_phrases = [
+        "who are you",
+        "what are you",
+        "what is your name",
+        "whats your name",
+        "what technology are you using",
+        "what technologies are you using",
+        "what tech stack are you using",
+        "what is your tech stack",
+        "what stack are you using",
+        "what are you built with",
+        "what were you built with",
+        "what model are you",
+        "which model are you",
+        "what ai model are you",
+        "which ai model are you",
+        "how do you work",
+        "how does this work",
+        "how do you answer",
+        "what can you do",
+        "what do you do",
+        "what are your capabilities"
+    ]
+
+    for phrase in identity_phrases:
+
+        if normalized_question == phrase:
+            return "identity"
+
+
+    # ====================================
+    # 4. Document question
+    # ====================================
 
     return "document"
 
